@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
   },
   profilePicture: {
-    type: String, // URL of the profile picture
+    type: String,
   },
   password: {
     type: String,
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     enum: ["Standard User", "Organizer", "Admin"],
     default: "Standard User",
   },
-}, { timestamps: true }); // Automatically adds createdAt and updatedAt
+}, { timestamps: true }); 
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
