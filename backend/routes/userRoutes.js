@@ -10,9 +10,9 @@ const {
 
 const authentication = require("../middleware/authenticationMiddleware");
 
-router.post("/register", registerUser);             // Public
-router.post("/login", loginUser);                   // Public
-router.get("/profile", authentication, getProfile); // Authenticated
-router.put("/profile", authentication, updateProfile); // Authenticated
+router.post("/register", registerUser);             
+router.post("/login", loginUser);                      
+router.get("/profile", authentication, getProfile); 
+router.put("/profile", authentication, updateProfile); 
 
 module.exports = router;
