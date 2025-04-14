@@ -1,6 +1,6 @@
 const Event = require('../models/Event');
 
-// 🔓 Public: Get all events
+
 exports.getAllEvents = async (req, res) => {
   try {
     const events = await Event.find();
@@ -10,7 +10,7 @@ exports.getAllEvents = async (req, res) => {
   }
 };
 
-// 📝 Organizer: Create event
+
 exports.createEvent = async (req, res) => {
   try {
     const event = await Event.create({
@@ -24,7 +24,7 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// 🛠 Organizer: Update event
+
 exports.updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -43,7 +43,7 @@ exports.updateEvent = async (req, res) => {
   }
 };
 
-// ❌ Organizer: Delete event
+
 exports.deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -61,7 +61,7 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
-// 👤 Organizer: Get my events
+
 exports.getMyEvents = async (req, res) => {
   try {
     const events = await Event.find({ organizer: req.user.id });
@@ -71,7 +71,7 @@ exports.getMyEvents = async (req, res) => {
   }
 };
 
-// 📊 Organizer: Event analytics
+
 exports.getAnalytics = async (req, res) => {
   try {
     const events = await Event.find({ organizer: req.user.id });

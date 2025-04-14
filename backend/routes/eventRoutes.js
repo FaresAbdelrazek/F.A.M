@@ -13,10 +13,10 @@ const {
 const auth = require("../middleware/authenticationMiddleware");
 const authorize = require("../middleware/authorizationMiddleware");
 
-// Public route
+
 router.get("/", getAllEvents);
 
-// Organizer-only routes
+
 router.post("/", auth, authorize("Organizer"), createEvent);
 router.put("/:id", auth, authorize("Organizer", "Admin"), updateEvent);
 router.delete("/:id", auth, authorize("Organizer", "Admin"), deleteEvent);
