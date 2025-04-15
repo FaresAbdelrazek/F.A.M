@@ -31,3 +31,6 @@ app.use('/api/v1/users', userRoutes);
 
 const eventRoutes = require('./routes/eventRoutes');
 app.use('/api/v1/events', eventRoutes);
+
+const bookingRoutes = require('./routes/bookingRoutes');
+app.use('/api/v1/bookings', bookingRoutes);
