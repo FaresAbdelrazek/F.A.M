@@ -2,17 +2,23 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-
-exports.registerUser = async (req, res) => {
+// 📝 Register user
+exports.registerUser = async (req, res, next) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required' });
+    const error = new Error('All fields are required');
+    error.statusCode = 400;
+    return next(error);
   }
 
   try {
     const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ message: 'User already exists' });
+    if (existing) {
+      const error = new Error('User already exists');
+      error.statusCode = 409;
+      return next(error);
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
@@ -24,20 +30,28 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    res.status(500).json({ message: 'Error during registration' });
+    next(err);
   }
 };
 
-
-exports.loginUser = async (req, res) => {
+// 🔐 Login user
+exports.loginUser = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      return next(error);
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Incorrect password' });
+    if (!isMatch) {
+      const error = new Error('Incorrect password');
+      error.statusCode = 401;
+      return next(error);
+    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -55,22 +69,22 @@ exports.loginUser = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ message: 'Error during login' });
+    next(err);
   }
 };
 
-
-exports.getProfile = async (req, res) => {
+// 👤 Get logged-in user profile
+exports.getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching profile' });
+    next(err);
   }
 };
 
-
-exports.updateProfile = async (req, res) => {
+// ✏️ Update user profile
+exports.updateProfile = async (req, res, next) => {
   try {
     const updates = req.body;
     const updatedUser = await User.findByIdAndUpdate(
@@ -81,6 +95,6 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json(updatedUser);
   } catch (err) {
-    res.status(500).json({ message: 'Error updating profile' });
+    next(err);
   }
 };
