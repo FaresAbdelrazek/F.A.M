@@ -1,78 +1,89 @@
 const Event = require('../models/Event');
 
-
-exports.getAllEvents = async (req, res) => {
+// Public: Get all events
+exports.getAllEvents = async (req, res, next) => {
   try {
     const events = await Event.find();
     res.status(200).json(events);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching events" });
+    next(err);
   }
 };
 
-
-exports.createEvent = async (req, res) => {
+// Organizer: Create an event
+exports.createEvent = async (req, res, next) => {
   try {
     const event = await Event.create({
       ...req.body,
       organizer: req.user.id,
-      remainingTickets: req.body.totalTickets // initialize
+      remainingTickets: req.body.totalTickets
     });
     res.status(201).json(event);
   } catch (err) {
-    res.status(500).json({ message: "Error creating event" });
+    next(err);
   }
 };
 
-
-exports.updateEvent = async (req, res) => {
+// Organizer/Admin: Update event
+exports.updateEvent = async (req, res, next) => {
   try {
     const event = await Event.findById(req.params.id);
 
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) {
+      const error = new Error("Event not found");
+      error.statusCode = 404;
+      return next(error);
+    }
 
-    // Only the organizer can update it
     if (String(event.organizer) !== req.user.id && req.user.role !== "Admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+      const error = new Error("Unauthorized");
+      error.statusCode = 403;
+      return next(error);
     }
 
     const updated = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.status(200).json(updated);
   } catch (err) {
-    res.status(500).json({ message: "Error updating event" });
+    next(err);
   }
 };
 
-
-exports.deleteEvent = async (req, res) => {
+// Organizer/Admin: Delete event
+exports.deleteEvent = async (req, res, next) => {
   try {
     const event = await Event.findById(req.params.id);
 
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) {
+      const error = new Error("Event not found");
+      error.statusCode = 404;
+      return next(error);
+    }
 
     if (String(event.organizer) !== req.user.id && req.user.role !== "Admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+      const error = new Error("Unauthorized");
+      error.statusCode = 403;
+      return next(error);
     }
 
     await event.deleteOne();
     res.status(200).json({ message: "Event deleted" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting event" });
+    next(err);
   }
 };
 
-
-exports.getMyEvents = async (req, res) => {
+// Organizer: Get events created by logged-in user
+exports.getMyEvents = async (req, res, next) => {
   try {
     const events = await Event.find({ organizer: req.user.id });
     res.status(200).json(events);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching your events" });
+    next(err);
   }
 };
 
-
-exports.getAnalytics = async (req, res) => {
+// Organizer: Analytics - % tickets booked
+exports.getAnalytics = async (req, res, next) => {
   try {
     const events = await Event.find({ organizer: req.user.id });
 
@@ -87,6 +98,6 @@ exports.getAnalytics = async (req, res) => {
 
     res.status(200).json(analytics);
   } catch (err) {
-    res.status(500).json({ message: "Error calculating analytics" });
+    next(err);
   }
 };
