@@ -20,7 +20,6 @@ exports.bookTickets = async (req, res, next) => {
 
     const totalPrice = event.ticketPrice * numberOfTickets;
 
-    
     const booking = await Booking.create({
       user: req.user.id,
       event: event._id,
@@ -28,7 +27,6 @@ exports.bookTickets = async (req, res, next) => {
       totalPrice,
       status: "confirmed"
     });
-
 
     event.remainingTickets -= numberOfTickets;
     await event.save();
@@ -70,7 +68,6 @@ exports.cancelBooking = async (req, res, next) => {
       return next(error);
     }
 
-
     const event = booking.event;
     event.remainingTickets += booking.numberOfTickets;
     await event.save();
@@ -79,6 +76,21 @@ exports.cancelBooking = async (req, res, next) => {
     await booking.save();
 
     res.status(200).json({ message: "Booking canceled successfully" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// NEW: Get a specific booking by ID
+exports.getBookingById = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate("event");
+    if (!booking) {
+      const error = new Error("Booking not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json(booking);
   } catch (err) {
     next(err);
   }
