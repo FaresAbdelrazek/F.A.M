@@ -26,11 +26,11 @@ mongoose.connect(process.env.MONGO_URI, {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
-const userRoutes = require('./routes/userRoutes');
+const userRoutes = require("./backend/routes/userRoutes");
 app.use('/api/v1/users', userRoutes);
 
-const eventRoutes = require('./routes/eventRoutes');
+const eventRoutes = require('./backend/routes/eventRoutes')
 app.use('/api/v1/events', eventRoutes);
 
-const bookingRoutes = require('./routes/bookingRoutes');
+const bookingRoutes = require('./backend/routes/bookingRoutes');
 app.use('/api/v1/bookings', bookingRoutes);
