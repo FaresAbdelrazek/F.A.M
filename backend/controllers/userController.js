@@ -21,7 +21,7 @@ exports.registerUser = async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
+    await User.create({
       name,
       email,
       password: hashedPassword,
@@ -94,6 +94,34 @@ exports.updateProfile = async (req, res, next) => {
     ).select("-password");
 
     res.status(200).json(updatedUser);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 🔄 Reset password
+exports.resetPassword = async (req, res, next) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    const error = new Error("Email and new password are required");
+    error.statusCode = 400;
+    return next(error);
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
   } catch (err) {
     next(err);
   }
