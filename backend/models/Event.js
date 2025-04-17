@@ -1,4 +1,4 @@
-// models/Event.js
+
 const mongoose = require("mongoose"); 
 
 const eventSchema = new mongoose.Schema({
@@ -12,7 +12,7 @@ const eventSchema = new mongoose.Schema({
   totalTickets: { type: Number, required: true },
   remainingTickets: { type: Number, required: true },
 
-  // ── New status field ────────────────────────────────────────────
+
   status: {
     type: String,
     enum: ["approved", "pending", "declined"],

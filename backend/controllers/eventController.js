@@ -1,8 +1,7 @@
-// controllers/eventController.js
+
 const Event = require("../models/Event");
 
-// @desc    Get all approved events (public)
-// @route   GET /api/v1/events
+
 exports.getAllEvents = async (req, res) => {
   try {
     const events = await Event.find({ status: "approved" });
@@ -13,14 +12,13 @@ exports.getAllEvents = async (req, res) => {
   }
 };
 
-// @desc    Get one event by ID (public if approved, or organizer/admin)
-// @route   GET /api/v1/events/:id
+
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ msg: "Event not found" });
 
-    // Only approved, or if requester is organizer/admin (we’ll check in route)
+
     res.json({ event });
   } catch (err) {
     console.error(err);
@@ -28,8 +26,7 @@ exports.getEventById = async (req, res) => {
   }
 };
 
-// @desc    Create a new event (organizer)
-// @route   POST /api/v1/events
+
 exports.createEvent = async (req, res) => {
   try {
     const data = { ...req.body, organizer: req.user._id };
@@ -41,8 +38,7 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// @desc    Update an event (organizer only on own event)
-// @route   PUT /api/v1/events/:id
+
 exports.updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -63,8 +59,7 @@ exports.updateEvent = async (req, res) => {
   }
 };
 
-// @desc    Delete an event (organizer only on own event)
-// @route   DELETE /api/v1/events/:id
+
 exports.deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -80,8 +75,7 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
-// @desc    Approve an event (admin only)
-// @route   PATCH /api/v1/events/:id/approve
+
 exports.approveEvent = async (req, res) => {
   try {
     const event = await Event.findByIdAndUpdate(
@@ -97,8 +91,7 @@ exports.approveEvent = async (req, res) => {
   }
 };
 
-// @desc    Reject an event (admin only)
-// @route   PATCH /api/v1/events/:id/reject
+
 exports.rejectEvent = async (req, res) => {
   try {
     const event = await Event.findByIdAndUpdate(

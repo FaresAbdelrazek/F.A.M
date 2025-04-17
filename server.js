@@ -1,4 +1,4 @@
-// server.js
+
 const express  = require('express');
 const mongoose = require('mongoose');
 const cors     = require('cors');
@@ -11,10 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Part b: User routes
+
 app.use('/api/v1/users', require('./backend/routes/userRoutes'));
 
-// Part c: Event routes
+
 app.use('/api/v1/events', require('./backend/routes/eventRoutes'));
 
 app.get('/', (req, res) => {
