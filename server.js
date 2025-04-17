@@ -1,4 +1,4 @@
-// server.js
+
 const express  = require('express');
 const mongoose = require('mongoose');
 const cors     = require('cors');
@@ -14,6 +14,8 @@ app.use(express.json());
 
 app.use('/api/v1/users', require('./backend/routes/userRoutes'));
 
+
+app.use('/api/v1/events', require('./backend/routes/eventRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');
