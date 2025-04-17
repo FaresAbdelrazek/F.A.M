@@ -1,45 +1,28 @@
+// models/Event.js
 const mongoose = require("mongoose"); 
 
 const eventSchema = new mongoose.Schema({
-  title: {
+  title: { type: String, required: true },
+  description: { type: String },
+  date: { type: Date, required: true },
+  location: { type: String, required: true },
+  category: { type: String, required: true },
+  image: { type: String },
+  ticketPrice: { type: Number, required: true },
+  totalTickets: { type: Number, required: true },
+  remainingTickets: { type: Number, required: true },
+
+  // ── New status field ────────────────────────────────────────────
+  status: {
     type: String,
-    required: true,
+    enum: ["approved", "pending", "declined"],
+    default: "pending",
   },
-  description: {
-    type: String,
-  },
-  date: {
-    type: Date,
-    required: true,
-  },
-  location: {
-    type: String,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-  },
-  image: {
-    type: String, // URL of event image
-  },
-  ticketPrice: {
-    type: Number,
-    required: true,
-  },
-  totalTickets: {
-    type: Number,
-    required: true,
-  },
-  remainingTickets: {
-    type: Number,
-    required: true,
-  },
+
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to the User (Organizer)
+    ref: "User",
   },
 }, { timestamps: true });
 
-const Event = mongoose.model("Event", eventSchema);
-module.exports = Event;
+module.exports = mongoose.model("Event", eventSchema);
