@@ -12,10 +12,13 @@ app.use(cors());
 app.use(express.json());
 
 
-app.use('/api/v1/users', require('./backend/routes/userRoutes'));
+app.use('/api/v1/users',  require('./backend/routes/userRoutes'));
 
 
 app.use('/api/v1/events', require('./backend/routes/eventRoutes'));
+
+
+app.use('/api/v1/bookings', require('./backend/routes/bookingRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');
