@@ -1,7 +1,22 @@
-// routes/userRoutes.js
+
 const express = require('express');
 const router  = express.Router();
 
-// (no routes yet—this is just a placeholder for part a)
+const {
+  registerUser,
+  loginUser,
+  getProfile,
+  updateProfile,
+} = require('../controllers/userController');
+
+const { verifyToken } = require('../middleware/authMiddleware');
+
+
+router.post('/register', registerUser);
+router.post('/login',    loginUser);
+
+
+router.get( '/profile', verifyToken, getProfile);
+router.put( '/profile', verifyToken, updateProfile);
 
 module.exports = router;
