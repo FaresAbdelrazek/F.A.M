@@ -24,13 +24,4 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch((err) => console.error("MongoDB error:", err));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-
-const userRoutes = require("./backend/routes/userRoutes");
-app.use('/api/v1/users', userRoutes);
-
-const eventRoutes = require('./backend/routes/eventRoutes')
-app.use('/api/v1/events', eventRoutes);
-
-const bookingRoutes = require('./backend/routes/bookingRoutes');
-app.use('/api/v1/bookings', bookingRoutes);
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
