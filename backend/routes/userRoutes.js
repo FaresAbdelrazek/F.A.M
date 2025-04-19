@@ -1,22 +1,28 @@
-
 const express = require('express');
 const router  = express.Router();
 
 const {
-  registerUser,
-  loginUser,
   getProfile,
   updateProfile,
+  getUserBookings,
+  getUserEvents,
+  getUserEventsAnalytics,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  deleteUser,
 } = require('../controllers/userController');
 
-const { verifyToken } = require('../middleware/authMiddleware');
+const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
-
-router.post('/register', registerUser);
-router.post('/login',    loginUser);
-
-
-router.get( '/profile', verifyToken, getProfile);
-router.put( '/profile', verifyToken, updateProfile);
+router.get('/profile',           verifyToken,                  getProfile);
+router.put('/profile',           verifyToken,                  updateProfile);
+router.get('/bookings',          verifyToken, authorizeRoles('Standard User'), getUserBookings);
+router.get('/events',            verifyToken, authorizeRoles('Organizer'),      getUserEvents);
+router.get('/events/analytics',  verifyToken, authorizeRoles('Organizer'),      getUserEventsAnalytics);
+router.get('/',                  verifyToken, authorizeRoles('Admin'),          getAllUsers);
+router.get('/:id',               verifyToken, authorizeRoles('Admin'),          getUserById);
+router.put('/:id',               verifyToken, authorizeRoles('Admin'),          updateUserRole);
+router.delete('/:id',            verifyToken, authorizeRoles('Admin'),          deleteUser);
 
 module.exports = router;
