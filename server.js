@@ -16,21 +16,14 @@ app.use('/api/v1',       require('./backend/routes/authRoutes'));
 
 
 app.use('/api/v1/users', require('./backend/routes/userRoutes'));
-
-
-app.use('/api/v1/events',   require('./backend/routes/eventRoutes'));
-
-
+app.use('/api/v1/events', require('./backend/routes/eventRoutes'));
 app.use('/api/v1/bookings', require('./backend/routes/bookingRoutes'));
 
 
 const { errorHandler } = require('./backend/middleware/errorMiddleware');
 app.use(errorHandler);
 
-
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
+app.get('/', (req, res) => res.send('API is running...'));
 
 mongoose
   .connect(process.env.MONGO_URI)
