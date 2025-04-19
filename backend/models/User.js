@@ -22,7 +22,14 @@ const userSchema = new mongoose.Schema({
     enum: ["Standard User", "Organizer", "Admin"],
     default: "Standard User",
   },
-}, { timestamps: true }); 
+  
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpires: {
+    type: Date,
+  },
+}, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
