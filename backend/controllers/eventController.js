@@ -1,6 +1,4 @@
-
 const Event = require("../models/Event");
-
 
 exports.getAllEvents = async (req, res, next) => {
   try {
@@ -11,7 +9,6 @@ exports.getAllEvents = async (req, res, next) => {
     next(err);
   }
 };
-
 
 exports.getEventById = async (req, res, next) => {
   try {
@@ -28,7 +25,6 @@ exports.getEventById = async (req, res, next) => {
   }
 };
 
-
 exports.createEvent = async (req, res, next) => {
   try {
     const data = { ...req.body, organizer: req.user._id };
@@ -39,7 +35,6 @@ exports.createEvent = async (req, res, next) => {
     next(err);
   }
 };
-
 
 exports.updateEvent = async (req, res, next) => {
   try {
@@ -66,7 +61,6 @@ exports.updateEvent = async (req, res, next) => {
   }
 };
 
-
 exports.deleteEvent = async (req, res, next) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -80,14 +74,13 @@ exports.deleteEvent = async (req, res, next) => {
       error.statusCode = 403;
       return next(error);
     }
-    await event.remove();
+    await Event.deleteOne({ _id: req.params.id });
     res.json({ message: "Event deleted" });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
     next(err);
   }
 };
-
 
 exports.approveEvent = async (req, res, next) => {
   try {
@@ -107,7 +100,6 @@ exports.approveEvent = async (req, res, next) => {
     next(err);
   }
 };
-
 
 exports.rejectEvent = async (req, res, next) => {
   try {

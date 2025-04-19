@@ -1,27 +1,20 @@
-
 const User       = require('../models/User');
 const bcrypt     = require('bcrypt');
 const jwt        = require('jsonwebtoken');
 const crypto     = require('crypto');
 const nodemailer = require('nodemailer');
 
-
 const transporter = nodemailer.createTransport({
-    host:    process.env.EMAIL_HOST,                // smtp.office365.com
-    port:    parseInt(process.env.EMAIL_PORT, 10),  // 587
-    secure:  false,                                 // use STARTTLS
-    requireTLS: true,                               // enforce STARTTLS
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      // disable certificate validation if your org uses a self‑signed cert
-      rejectUnauthorized: false
-    }
-  });
-  
-
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT, 10),
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: { rejectUnauthorized: false }
+});
 
 function signToken(user) {
   return jwt.sign(
@@ -31,14 +24,10 @@ function signToken(user) {
   );
 }
 
-
 exports.registerUser = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
-    if (await User.findOne({ email })) {
-      return res.status(400).json({ msg: 'Email already in use' });
-    }
-
+    if (await User.findOne({ email })) return res.status(400).json({ msg: 'Email already in use' });
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hash, role });
     res.status(201).json({ token: signToken(user) });
@@ -48,14 +37,11 @@ exports.registerUser = async (req, res, next) => {
   }
 };
 
-
 exports.loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
+    if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ msg: 'Invalid credentials' });
     res.json({ token: signToken(user) });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
@@ -63,29 +49,17 @@ exports.loginUser = async (req, res, next) => {
   }
 };
 
-
 exports.getProfile = (req, res, next) => {
-  try {
-    res.json({ user: req.user });
-  } catch (err) {
-    err.statusCode = err.statusCode || 500;
-    next(err);
-  }
+  try { res.json({ user: req.user }); }
+  catch (err) { err.statusCode = err.statusCode || 500; next(err); }
 };
-
 
 exports.updateProfile = async (req, res, next) => {
   try {
     const updates = {};
     if (req.body.name) updates.name = req.body.name;
     if (req.body.profilePicture) updates.profilePicture = req.body.profilePicture;
-
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      updates,
-      { new: true }
-    ).select('-password');
-
+    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
     res.json({ user });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
@@ -93,31 +67,16 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-
 exports.requestPasswordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
-    if (!user) {
-      const error = new Error('No account with that email');
-      error.statusCode = 404;
-      return next(error);
-    }
-
-    
+    if (!user) return res.status(404).json({ msg: 'No account with that email' });
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.resetPasswordToken = otp;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15m
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
     await user.save();
-
-    
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: 'Your password reset code',
-      text: `Your OTP code is ${otp}. It expires in 15 minutes.`,
-    });
-
+    await transporter.sendMail({ from: process.env.EMAIL_USER, to: user.email, subject: 'Password reset code', text: `Your OTP is ${otp}` });
     res.json({ msg: 'OTP sent to email' });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
@@ -125,29 +84,72 @@ exports.requestPasswordReset = async (req, res, next) => {
   }
 };
 
-
 exports.resetPassword = async (req, res, next) => {
   try {
     const { email, otp, newPassword } = req.body;
-    const user = await User.findOne({
-      email,
-      resetPasswordToken: otp,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-    if (!user) {
-      const error = new Error('Invalid or expired OTP');
-      error.statusCode = 400;
-      return next(error);
-    }
-
+    const user = await User.findOne({ email, resetPasswordToken: otp, resetPasswordExpires: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ msg: 'Invalid or expired OTP' });
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
-
     res.json({ msg: 'Password has been reset' });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
     next(err);
   }
+};
+
+const Event = require('../models/Event');
+
+exports.getUserBookings = async (req, res, next) => {
+  try {
+    const { getUserBookings } = require('./bookingController');
+    return getUserBookings(req, res, next);
+  } catch (err) { next(err); }
+};
+
+exports.getUserEvents = async (req, res, next) => {
+  try {
+    const events = await Event.find({ organizer: req.user._id });
+    res.json({ events });
+  } catch (err) { err.statusCode = err.statusCode || 500; next(err); }
+};
+
+exports.getUserEventsAnalytics = async (req, res, next) => {
+  try {
+    const events = await Event.find({ organizer: req.user._id });
+    const analytics = events.map(e => ({ eventId: e._id, title: e.title, percentBooked: Math.round(((e.totalTickets - e.remainingTickets)/e.totalTickets)*100) }));
+    res.json({ analytics });
+  } catch (err) { err.statusCode = err.statusCode || 500; next(err); }
+};
+
+exports.getAllUsers = async (req, res, next) => {
+  try { const users = await User.find().select('-password'); res.json({ users }); }
+  catch (err) { err.statusCode = err.statusCode || 500; next(err); }
+};
+
+exports.getUserById = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    res.json({ user });
+  } catch (err) { err.statusCode = err.statusCode || 500; next(err); }
+};
+
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { role: req.body.role }, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    res.json({ user });
+  } catch (err) { err.statusCode = err.statusCode || 500; next(err); }
+};
+
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    await User.deleteOne({ _id: req.params.id });
+    res.json({ msg: 'User deleted' });
+  } catch (err) { err.statusCode = err.statusCode || 500; next(err); }
 };
