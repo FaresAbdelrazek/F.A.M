@@ -11,7 +11,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'User',
+    role: 'Standard User', // Changed from 'User' to 'Standard User'
   });
   const [loading, setLoading] = useState(false);
 
@@ -25,16 +25,25 @@ const Register = () => {
       return;
     }
 
+    console.log('Form data being sent:', {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    });
+
     setLoading(true);
     try {
-      await register({
+      const result = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role,
       });
+      console.log('Registration successful:', result);
       navigate('/login');
     } catch (error) {
+      console.error('Registration error in component:', error);
       // Error handled inside AuthContext via toast
     } finally {
       setLoading(false);
@@ -59,7 +68,7 @@ const Register = () => {
 
         <label>Role:</label>
         <select name="role" value={formData.role} onChange={handleChange}>
-          <option value="User">User</option>
+          <option value="Standard User">Standard User</option>
           <option value="Organizer">Organizer</option>
         </select>
 
