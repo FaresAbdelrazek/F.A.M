@@ -1,5 +1,6 @@
+// src/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';           // <-- your axios instance
 import { toast } from 'react-toastify';
 
 export const AuthContext = createContext();
@@ -8,59 +9,87 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load current user on app load
+  // Helper function to set auth token
+  const setAuthToken = (token) => {
+    if (token) {
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+    }
+  };
+
+  // 1. Load current user on app start
   useEffect(() => {
-    async function loadUser() {
+    const loadUser = async () => {
       try {
-        const res = await axios.get('/api/v1/auth/me'); // Your backend endpoint to get current user
-        setUser(res.data.user);
-      } catch (error) {
+        const token = localStorage.getItem('token');
+        if (token) {
+          setAuthToken(token);
+          // Use the correct endpoint that exists in your backend
+          const res = await api.get('/users/profile');
+          setUser(res.data.user);
+        }
+      } catch (err) {
+        console.error('Load user error:', err);
         setUser(null);
+        setAuthToken(null); // Clear invalid token
       } finally {
         setLoading(false);
       }
-      
-    }
+    };
     loadUser();
   }, []);
 
-  // Login function
+  // 2. Login
   const login = async (email, password) => {
     try {
-      const res = await axios.post('/api/v1/auth/login', { email, password });
-      setUser(res.data.user);
+      const res = await api.post('/login', { email, password }); // Correct endpoint
+      const { token } = res.data;
+      
+      setAuthToken(token);
+      
+      // Get user profile after login
+      const userRes = await api.get('/users/profile');
+      setUser(userRes.data.user);
+      
       toast.success('Logged in successfully');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
-      throw error;
+      return res.data;
+    } catch (err) {
+      console.error('Login error:', err);
+      toast.error(err.response?.data?.msg || 'Login failed');
+      throw err;
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await axios.post('/api/v1/auth/logout'); // backend endpoint to clear cookie/token
-      setUser(null);
-      toast.info('Logged out');
-    } catch (error) {
-      toast.error('Logout failed');
-    }
+  // 3. Logout
+  const logout = () => {
+    setAuthToken(null);
+    setUser(null);
+    toast.info('Logged out');
   };
 
-  // Register function
+  // 4. Register
   const register = async (formData) => {
     try {
-      const res = await axios.post('/api/v1/auth/register', formData);
-      toast.success('Registered successfully. Please login.');
+      console.log('Registering with data:', formData);
+      const res = await api.post('/register', formData); // Correct endpoint
+      console.log('Registration response:', res.data);
+      toast.success('Registered successfully. Please log in.');
       return res.data;
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
-      throw error;
+    } catch (err) {
+      console.error('Registration error:', err);
+      console.error('Error response:', err.response?.data);
+      toast.error(err.response?.data?.msg || 'Registration failed');
+      throw err;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, logout, register }}>
+    <AuthContext.Provider
+      value={{ user, setUser, loading, login, logout, register }}
+    >
       {children}
     </AuthContext.Provider>
   );

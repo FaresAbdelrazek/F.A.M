@@ -1,50 +1,76 @@
+// src/components/BookTicketForm.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { toast } from 'react-toastify';
 
 const BookTicketForm = ({ eventId, maxTickets, price }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [loading, setLoading] = useState(false);
-
-  const handleQuantityChange = (e) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val) || val < 1) val = 1;
-    if (val > maxTickets) val = maxTickets;
-    setQuantity(val);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (numberOfTickets < 1 || numberOfTickets > maxTickets) {
+      toast.error(`Please select between 1 and ${maxTickets} tickets`);
+      return;
+    }
+
     setLoading(true);
     try {
-      await axios.post('/api/v1/bookings', { eventId, quantity });
-      toast.success('Tickets booked successfully!');
-      // Optionally trigger a parent refresh or redirect
+      console.log('Booking tickets:', { eventId, numberOfTickets });
+      
+      const response = await api.post('/bookings', {
+        eventId,
+        numberOfTickets: parseInt(numberOfTickets)
+      });
+
+      console.log('Booking response:', response.data);
+      toast.success('Booking successful!');
+      
+      // Optionally redirect or refresh the page
+      window.location.reload();
+      
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Booking failed.');
+      console.error('Booking error:', error);
+      const errorMessage = error.response?.data?.msg || 'Booking failed';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const totalPrice = numberOfTickets * price;
+
   return (
-    <form onSubmit={handleSubmit} className="book-ticket-form">
-      <label>
-        Number of Tickets (max {maxTickets}):
-        <input
-          type="number"
-          min="1"
-          max={maxTickets}
-          value={quantity}
-          onChange={handleQuantityChange}
-          required
-        />
-      </label>
-      <p>Total Price: ${(quantity * price).toFixed(2)}</p>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Booking...' : 'Book Tickets'}
-      </button>
-    </form>
+    <div className="book-ticket-form">
+      <h3>Book Tickets</h3>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="numberOfTickets">Number of Tickets:</label>
+          <select
+            id="numberOfTickets"
+            value={numberOfTickets}
+            onChange={(e) => setNumberOfTickets(e.target.value)}
+            disabled={loading}
+          >
+            {Array.from({ length: Math.min(maxTickets, 10) }, (_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <p>Price per ticket: ${price.toFixed(2)}</p>
+          <p><strong>Total: ${totalPrice.toFixed(2)}</strong></p>
+        </div>
+        
+        <button type="submit" disabled={loading}>
+          {loading ? 'Booking...' : 'Book Tickets'}
+        </button>
+      </form>
+    </div>
   );
 };
 
