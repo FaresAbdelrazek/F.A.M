@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../services/api';
-import EventCard from '../components/EventCard';
-import Loader from '../components/Loader';
+import { Link } from 'react-router-dom';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const res = await axios.get('/events?status=approved');
-        setEvents(res.data.events);
+        console.log('Events page: Fetching approved events...');
+        
+        // This should get approved events for everyone
+        const res = await axios.get('/events');
+        console.log('Events response:', res.data);
+        
+        setEvents(res.data.events || []);
+        setError(null);
       } catch (error) {
         console.error('Error fetching events:', error);
+        console.error('Error details:', error.response);
+        setError('Failed to load events');
       } finally {
         setLoading(false);
       }
@@ -24,90 +29,120 @@ const Events = () => {
     fetchEvents();
   }, []);
 
-  // Filter events by search term, category, and location
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter ? event.category === categoryFilter : true;
-    const matchesLocation = locationFilter ? event.location.toLowerCase().includes(locationFilter.toLowerCase()) : true;
-    return matchesSearch && matchesCategory && matchesLocation;
-  });
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <h2>Loading Events...</h2>
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
 
-  // Get unique categories and locations for filter options
-  const categories = [...new Set(events.map(event => event.category))];
-  const locations = [...new Set(events.map(event => event.location))];
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem', color: 'red' }}>
+        <h2>Error Loading Events</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Try Again</button>
+      </div>
+    );
+  }
 
-  if (loading) return <Loader />;
+  // Filter only approved events for public display
+  const approvedEvents = events.filter(event => event.status === 'approved');
 
   return (
-    <div className="page">
-      <h2>Browse Events</h2>
-
-      {/* Search and Filter Section */}
-      <div className="search-filters">
-        <input
-          type="text"
-          placeholder="Search events by name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-          <option value="">All Categories</option>
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
-
-        <input
-          type="text"
-          placeholder="Filter by location..."
-          value={locationFilter}
-          onChange={(e) => setLocationFilter(e.target.value)}
-        />
-
-        {(searchTerm || categoryFilter || locationFilter) && (
-          <button 
-            className="btn btn-secondary"
-            onClick={() => {
-              setSearchTerm('');
-              setCategoryFilter('');
-              setLocationFilter('');
-            }}
-          >
-            Clear Filters
-          </button>
-        )}
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Browse Events</h1>
+        <p className="page-subtitle">Discover amazing events near you</p>
       </div>
 
-      {/* Results Summary */}
-      <p style={{ marginBottom: '20px', color: '#666' }}>
-        Showing {filteredEvents.length} of {events.length} events
-      </p>
+      <div style={{ marginBottom: '2rem' }}>
+        <p>Showing {approvedEvents.length} approved events</p>
+      </div>
 
-      {/* Events List */}
-      <div className="events-list">
-        {filteredEvents.length === 0 ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
-            <p>No events found matching your criteria.</p>
-            {(searchTerm || categoryFilter || locationFilter) && (
-              <button 
-                className="btn btn-primary"
-                style={{ marginTop: '10px' }}
-                onClick={() => {
-                  setSearchTerm('');
-                  setCategoryFilter('');
-                  setLocationFilter('');
-                }}
-              >
-                View All Events
-              </button>
-            )}
+      {approvedEvents.length === 0 ? (
+        <div className="card">
+          <div className="card-body text-center" style={{ padding: '3rem' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎭</div>
+            <h3 style={{ marginBottom: '1rem' }}>No approved events available</h3>
+            <p style={{ marginBottom: '2rem' }}>
+              Events are waiting for admin approval or no events have been created yet.
+            </p>
           </div>
-        ) : (
-          filteredEvents.map(event => (
-            <EventCard key={event._id} event={event} />
-          ))
-        )}
+        </div>
+      ) : (
+        <div className="events-grid">
+          {approvedEvents.map(event => (
+            <div key={event._id} className="event-card">
+              <div className="event-card-image">
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%'
+                }}>
+                  <div style={{ fontSize: '3rem' }}>
+                    {event.category === 'Music' ? '🎵' : 
+                     event.category === 'Sports' ? '⚽' :
+                     event.category === 'Art' ? '🎨' : '🎉'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="event-card-content">
+                <h3 className="event-title">{event.title}</h3>
+                
+                <div className="event-details">
+                  <div className="event-detail">
+                    <span>📅</span>
+                    <span>{new Date(event.date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="event-detail">
+                    <span>📍</span>
+                    <span>{event.location}</span>
+                  </div>
+                  <div className="event-detail">
+                    <span>🏷️</span>
+                    <span>{event.category}</span>
+                  </div>
+                  <div className="event-detail">
+                    <span>🎫</span>
+                    <span>{event.remainingTickets} tickets left</span>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginTop: '1rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid var(--light-gray)'
+                }}>
+                  <div className="event-price">${event.ticketPrice}</div>
+                  
+                  <Link 
+                    to={`/events/${event._id}`} 
+                    className="btn btn-primary"
+                    style={{ textDecoration: 'none', fontSize: '0.875rem' }}
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f0f0f0' }}>
+        <h4>Debug Info:</h4>
+        <p>Total events fetched: {events.length}</p>
+        <p>Approved events: {approvedEvents.length}</p>
+        <p>Event statuses: {events.map(e => e.status).join(', ')}</p>
       </div>
     </div>
   );
