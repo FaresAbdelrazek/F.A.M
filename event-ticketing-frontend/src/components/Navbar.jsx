@@ -1,72 +1,65 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/events');
   };
 
+  const isActive = (path) => location.pathname === path;
+
+  const getUserInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
-    <nav style={{ 
-      padding: '15px 20px', 
-      borderBottom: '2px solid #ddd',
-      backgroundColor: '#f8f9fa',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <Link 
-          to="/events" 
-          style={{ 
-            fontSize: '24px',
-            fontWeight: 'bold',
-            textDecoration: 'none',
-            color: '#007bff'
-          }}
-        >
-          EventTicket
+    <nav>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <Link to="/events" className="logo">
+          🎫 EventTicket
         </Link>
         
         <Link 
           to="/events" 
-          style={{ 
-            marginLeft: '15px',
-            textDecoration: 'none',
-            color: '#333',
-            fontWeight: '500'
-          }}
+          className={`nav-link ${isActive('/events') ? 'active' : ''}`}
         >
-          Browse Events
+          🏠 Browse Events
         </Link>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+      <div className="nav-links">
         {user ? (
           <>
-            <span style={{ color: '#666' }}>Hello, {user.name}</span>
+            {/* User Info */}
+            <div className="user-info">
+              <span>Hello, <strong>{user.name}</strong></span>
+              <div className="user-avatar">
+                {getUserInitials(user.name)}
+              </div>
+            </div>
             
             {/* Common links for all authenticated users */}
             <Link 
               to="/profile" 
-              style={{ textDecoration: 'none', color: '#007bff' }}
+              className={`nav-link ${isActive('/profile') ? 'active' : ''}`}
             >
-              Profile
+              👤 Profile
             </Link>
 
             {/* Standard User specific links */}
             {user.role === 'Standard User' && (
               <Link 
                 to="/bookings" 
-                style={{ textDecoration: 'none', color: '#007bff' }}
+                className={`nav-link ${isActive('/bookings') ? 'active' : ''}`}
               >
-                My Bookings
+                🎫 My Bookings
               </Link>
             )}
 
@@ -75,21 +68,21 @@ const Navbar = () => {
               <>
                 <Link 
                   to="/my-events" 
-                  style={{ textDecoration: 'none', color: '#007bff' }}
+                  className={`nav-link ${isActive('/my-events') ? 'active' : ''}`}
                 >
-                  My Events
+                  📋 My Events
                 </Link>
                 <Link 
                   to="/create-event" 
-                  style={{ textDecoration: 'none', color: '#28a745' }}
+                  className={`nav-link ${isActive('/create-event') ? 'active' : ''}`}
                 >
-                  Create Event
+                  ➕ Create Event
                 </Link>
                 <Link 
                   to="/analytics" 
-                  style={{ textDecoration: 'none', color: '#007bff' }}
+                  className={`nav-link ${isActive('/analytics') ? 'active' : ''}`}
                 >
-                  Analytics
+                  📊 Analytics
                 </Link>
               </>
             )}
@@ -99,58 +92,47 @@ const Navbar = () => {
               <>
                 <Link 
                   to="/admin/events" 
-                  style={{ textDecoration: 'none', color: '#dc3545' }}
+                  className={`nav-link ${isActive('/admin/events') ? 'active' : ''}`}
                 >
-                  Manage Events
+                  🛠️ Manage Events
                 </Link>
                 <Link 
                   to="/admin/users" 
-                  style={{ textDecoration: 'none', color: '#dc3545' }}
+                  className={`nav-link ${isActive('/admin/users') ? 'active' : ''}`}
                 >
-                  Manage Users
+                  👥 Manage Users
                 </Link>
               </>
             )}
 
             <button 
               onClick={handleLogout}
+              className="btn btn-danger"
               style={{ 
-                padding: '8px 16px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: '0.875rem',
+                padding: '0.5rem 1rem'
               }}
             >
-              Logout
+              🚪 Logout
             </button>
           </>
         ) : (
           <>
             <Link 
               to="/login" 
-              style={{ 
-                textDecoration: 'none', 
-                color: '#007bff',
-                marginRight: '10px'
-              }}
+              className={`nav-link ${isActive('/login') ? 'active' : ''}`}
             >
-              Login
+              🔐 Login
             </Link>
             <Link 
               to="/register" 
-              style={{ 
-                padding: '8px 16px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontSize: '14px'
+              className="btn btn-primary"
+              style={{
+                fontSize: '0.875rem',
+                padding: '0.5rem 1rem'
               }}
             >
-              Register
+              ✨ Register
             </Link>
           </>
         )}
