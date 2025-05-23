@@ -35,6 +35,9 @@ const EventDetails = () => {
 
   if (!event) return <p>Event not found.</p>;
 
+  // Check if user is a Standard User (only Standard Users can book tickets)
+  const canBookTickets = user && user.role === 'Standard User';
+
   return (
     <div className="event-details-page">
       <h2>{event.title}</h2>
@@ -47,7 +50,8 @@ const EventDetails = () => {
         {event.remainingTickets > 0 ? event.remainingTickets : 'Sold Out'}
       </p>
 
-      {user ? (
+      {/* Booking section - only for Standard Users */}
+      {canBookTickets ? (
         event.remainingTickets > 0 ? (
           <BookTicketForm
             eventId={id}
@@ -57,9 +61,27 @@ const EventDetails = () => {
         ) : (
           <p>Sold Out</p>
         )
+      ) : user && (user.role === 'Organizer' || user.role === 'Admin') ? (
+        // Show different message for Organizers and Admins
+        <div style={{ 
+          background: '#f8f9fa', 
+          padding: '20px', 
+          borderRadius: '8px', 
+          margin: '20px 0',
+          border: '1px solid #ddd',
+          textAlign: 'center'
+        }}>
+          <p style={{ color: '#666', margin: 0 }}>
+            {user.role === 'Organizer' 
+              ? 'As an organizer, you cannot book tickets for events.' 
+              : 'As an admin, you cannot book tickets for events.'
+            }
+          </p>
+        </div>
       ) : (
+        // Show login prompt for non-authenticated users
         <p>
-          Please <Link to="/login">login</Link> to book tickets.
+          Please <Link to="/login">login</Link> as a Standard User to book tickets.
         </p>
       )}
     </div>
