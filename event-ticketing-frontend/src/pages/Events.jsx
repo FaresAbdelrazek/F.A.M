@@ -1,27 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../services/api';
-import { Link } from 'react-router-dom';
+import EventCard from '../components/EventCard';
+import Loader from '../components/Loader';
+import { toast } from 'react-toastify';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
 
   useEffect(() => {
     async function fetchEvents() {
       try {
-        console.log('Events page: Fetching approved events...');
-        
-        // This should get approved events for everyone
+        console.log('Fetching events...');
         const res = await axios.get('/events');
         console.log('Events response:', res.data);
         
-        setEvents(res.data.events || []);
-        setError(null);
+        if (res.data && res.data.events) {
+          setEvents(res.data.events);
+          setError(null);
+        } else {
+          console.warn('No events found in response:', res.data);
+          setEvents([]);
+        }
       } catch (error) {
         console.error('Error fetching events:', error);
-        console.error('Error details:', error.response);
-        setError('Failed to load events');
+        setError(`Failed to load events: ${error.response?.data?.message || error.message}`);
+        toast.error('Failed to load events');
       } finally {
         setLoading(false);
       }
@@ -29,120 +37,317 @@ const Events = () => {
     fetchEvents();
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <h2>Loading Events...</h2>
-        <div className="loading-spinner"></div>
-      </div>
-    );
-  }
+  const retryFetch = () => {
+    setLoading(true);
+    setError(null);
+    window.location.reload();
+  };
+
+  // Filter events by search term, category, and location
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter ? event.category === categoryFilter : true;
+    const matchesLocation = locationFilter ? event.location.toLowerCase().includes(locationFilter.toLowerCase()) : true;
+    return matchesSearch && matchesCategory && matchesLocation;
+  });
+
+  // Get unique categories and locations for filter options
+  const categories = [...new Set(events.map(event => event.category))];
+  const locations = [...new Set(events.map(event => event.location))];
+
+  if (loading) return <Loader />;
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem', color: 'red' }}>
-        <h2>Error Loading Events</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>Try Again</button>
+      <div className="page">
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          color: 'red'
+        }}>
+          <h2>Error Loading Events</h2>
+          <p>{error}</p>
+          <button 
+            onClick={retryFetch}
+            className="btn btn-primary"
+            style={{ marginTop: '15px' }}
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Filter only approved events for public display
-  const approvedEvents = events.filter(event => event.status === 'approved');
-
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Browse Events</h1>
-        <p className="page-subtitle">Discover amazing events near you</p>
+    <div className="page">
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '30px',
+        borderBottom: '2px solid #007bff',
+        paddingBottom: '15px'
+      }}>
+        <h2 style={{ margin: 0, color: '#333' }}>Browse Events</h2>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #007bff, #0056b3)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '20px',
+          fontSize: '14px',
+          fontWeight: 'bold'
+        }}>
+          {filteredEvents.length} Events Available
+        </div>
       </div>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <p>Showing {approvedEvents.length} approved events</p>
-      </div>
-
-      {approvedEvents.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center" style={{ padding: '3rem' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎭</div>
-            <h3 style={{ marginBottom: '1rem' }}>No approved events available</h3>
-            <p style={{ marginBottom: '2rem' }}>
-              Events are waiting for admin approval or no events have been created yet.
-            </p>
+      {/* Enhanced Search and Filter Section */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f8f9fa, #e9ecef)',
+        padding: '25px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+        marginBottom: '30px',
+        border: '1px solid #dee2e6'
+      }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+          gap: '15px',
+          alignItems: 'end'
+        }}>
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#495057'
+            }}>
+              🔍 Search Events
+            </label>
+            <input
+              type="text"
+              placeholder="Search by event name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #dee2e6',
+                borderRadius: '8px',
+                fontSize: '14px',
+                transition: 'border-color 0.3s ease',
+                backgroundColor: 'white'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
+            />
           </div>
-        </div>
-      ) : (
-        <div className="events-grid">
-          {approvedEvents.map(event => (
-            <div key={event._id} className="event-card">
-              <div className="event-card-image">
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%'
-                }}>
-                  <div style={{ fontSize: '3rem' }}>
-                    {event.category === 'Music' ? '🎵' : 
-                     event.category === 'Sports' ? '⚽' :
-                     event.category === 'Art' ? '🎨' : '🎉'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="event-card-content">
-                <h3 className="event-title">{event.title}</h3>
-                
-                <div className="event-details">
-                  <div className="event-detail">
-                    <span>📅</span>
-                    <span>{new Date(event.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="event-detail">
-                    <span>📍</span>
-                    <span>{event.location}</span>
-                  </div>
-                  <div className="event-detail">
-                    <span>🏷️</span>
-                    <span>{event.category}</span>
-                  </div>
-                  <div className="event-detail">
-                    <span>🎫</span>
-                    <span>{event.remainingTickets} tickets left</span>
-                  </div>
-                </div>
 
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  marginTop: '1rem',
-                  paddingTop: '1rem',
-                  borderTop: '1px solid var(--light-gray)'
-                }}>
-                  <div className="event-price">${event.ticketPrice}</div>
-                  
-                  <Link 
-                    to={`/events/${event._id}`} 
-                    className="btn btn-primary"
-                    style={{ textDecoration: 'none', fontSize: '0.875rem' }}
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#495057'
+            }}>
+              📂 Category
+            </label>
+            <select 
+              value={categoryFilter} 
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #dee2e6',
+                borderRadius: '8px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#495057'
+            }}>
+              📍 Location
+            </label>
+            <input
+              type="text"
+              placeholder="Filter by location..."
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #dee2e6',
+                borderRadius: '8px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
+            />
+          </div>
+
+          {(searchTerm || categoryFilter || locationFilter) && (
+            <div>
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setCategoryFilter('');
+                  setLocationFilter('');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'linear-gradient(135deg, #6c757d, #495057)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+              >
+                ✨ Clear Filters
+              </button>
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </div>
 
-      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f0f0f0' }}>
-        <h4>Debug Info:</h4>
-        <p>Total events fetched: {events.length}</p>
-        <p>Approved events: {approvedEvents.length}</p>
-        <p>Event statuses: {events.map(e => e.status).join(', ')}</p>
+      {/* Results Summary */}
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '25px',
+        padding: '15px 20px',
+        background: 'linear-gradient(135deg, #e3f2fd, #bbdefb)',
+        borderRadius: '10px',
+        border: '1px solid #2196f3'
+      }}>
+        <p style={{ 
+          margin: 0, 
+          color: '#1565c0',
+          fontWeight: '600',
+          fontSize: '16px'
+        }}>
+          📊 Showing {filteredEvents.length} of {events.length} events
+        </p>
+        
+        {filteredEvents.length > 0 && (
+          <p style={{ 
+            margin: 0, 
+            color: '#1565c0',
+            fontSize: '14px'
+          }}>
+            {categories.length} categories • {locations.length} locations
+          </p>
+        )}
+      </div>
+
+      {/* Events Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+        gap: '25px',
+        marginTop: '20px'
+      }}>
+        {filteredEvents.length === 0 && events.length === 0 ? (
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            textAlign: 'center', 
+            padding: '60px 20px',
+            background: 'linear-gradient(135deg, #fff3e0, #ffe0b2)',
+            borderRadius: '15px',
+            border: '2px dashed #ff9800'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎭</div>
+            <h3 style={{ color: '#e65100', marginBottom: '10px' }}>No Events Available</h3>
+            <p style={{ color: '#ef6c00', marginBottom: '20px' }}>
+              No events are currently available. Events need to be approved by an admin before they appear here.
+            </p>
+            <div style={{ 
+              background: 'rgba(255, 152, 0, 0.1)',
+              padding: '15px',
+              borderRadius: '8px',
+              color: '#e65100'
+            }}>
+              💡 Tip: Check back later or contact an organizer to create new events!
+            </div>
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            textAlign: 'center', 
+            padding: '40px 20px',
+            background: 'linear-gradient(135deg, #fce4ec, #f8bbd9)',
+            borderRadius: '15px',
+            border: '2px solid #e91e63'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔍</div>
+            <h3 style={{ color: '#ad1457', marginBottom: '15px' }}>No Events Match Your Search</h3>
+            <p style={{ color: '#c2185b', marginBottom: '20px' }}>
+              Try adjusting your search criteria or browse all events.
+            </p>
+            {(searchTerm || categoryFilter || locationFilter) && (
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setCategoryFilter('');
+                  setLocationFilter('');
+                }}
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #e91e63, #ad1457)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '25px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+              >
+                🎯 View All Events
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredEvents.map(event => (
+            <div key={event._id} style={{
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.15)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}>
+              <EventCard event={event} />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
