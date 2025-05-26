@@ -11,6 +11,7 @@ const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(''); // ADD THIS LINE - the missing date filter
 
   useEffect(() => {
     async function fetchEvents() {
@@ -43,12 +44,17 @@ const Events = () => {
     window.location.reload();
   };
 
-  // Filter events by search term, category, and location
+  // UPDATED: Filter events by search term, category, location, AND DATE
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter ? event.category === categoryFilter : true;
     const matchesLocation = locationFilter ? event.location.toLowerCase().includes(locationFilter.toLowerCase()) : true;
-    return matchesSearch && matchesCategory && matchesLocation;
+    
+    // ADD THIS: Date filter logic
+    const matchesDate = dateFilter ? 
+      new Date(event.date).toDateString() === new Date(dateFilter).toDateString() : true;
+    
+    return matchesSearch && matchesCategory && matchesLocation && matchesDate;
   });
 
   // Get unique categories and locations for filter options
@@ -201,13 +207,41 @@ const Events = () => {
             />
           </div>
 
-          {(searchTerm || categoryFilter || locationFilter) && (
+          {/* ADD THIS: Date Filter Input */}
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#495057'
+            }}>
+              📅 Date
+            </label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #dee2e6',
+                borderRadius: '8px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            />
+          </div>
+
+          {/* UPDATED: Include dateFilter in clear conditions */}
+          {(searchTerm || categoryFilter || locationFilter || dateFilter) && (
             <div>
               <button 
                 onClick={() => {
                   setSearchTerm('');
                   setCategoryFilter('');
                   setLocationFilter('');
+                  setDateFilter(''); // ADD THIS LINE
                 }}
                 style={{
                   width: '100%',
@@ -306,12 +340,13 @@ const Events = () => {
             <p style={{ color: '#c2185b', marginBottom: '20px' }}>
               Try adjusting your search criteria or browse all events.
             </p>
-            {(searchTerm || categoryFilter || locationFilter) && (
+            {(searchTerm || categoryFilter || locationFilter || dateFilter) && (
               <button 
                 onClick={() => {
                   setSearchTerm('');
                   setCategoryFilter('');
                   setLocationFilter('');
+                  setDateFilter(''); // ADD THIS LINE
                 }}
                 style={{
                   padding: '12px 24px',
