@@ -7,9 +7,9 @@ const {
   resetPassword
 } = require('../controllers/userController');
 
-router.post('/register',       registerUser);
-router.post('/login',          loginUser);
-router.put( '/forgetPassword', requestPasswordReset);
-router.put( '/resetPassword',  resetPassword);
+router.post('/register',         registerUser);
+router.post('/login',            loginUser);
+router.post('/forgot-password',  requestPasswordReset);  // Fixed: POST instead of PUT
+router.post('/reset-password',   resetPassword);         // Fixed: POST instead of PUT
 
 module.exports = router;

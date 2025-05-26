@@ -1,4 +1,5 @@
 const Event = require("../models/Event");
+const Booking = require("../models/booking");
 
 // Create Event - FIXED VERSION
 exports.createEvent = async (req, res, next) => {
@@ -88,16 +89,6 @@ exports.getAllEventsForAdmin = async (req, res, next) => {
   }
 };
 
-exports.getMyEvents = async (req, res, next) => {
-  try {
-    const events = await Event.find({ organizer: req.user._id });
-    res.json({ events });
-  } catch (err) {
-    err.statusCode = err.statusCode || 500;
-    next(err);
-  }
-};
-
 exports.getEventById = async (req, res, next) => {
   try {
     const event = await Event.findById(req.params.id).populate('organizer', 'name email');
@@ -160,8 +151,16 @@ exports.deleteEvent = async (req, res, next) => {
       error.statusCode = 403;
       return next(error);
     }
+
+    // Delete all bookings associated with this event
+    await Booking.deleteMany({ event: req.params.id });
+    
+    // Delete the event
     await Event.deleteOne({ _id: req.params.id });
-    res.json({ message: "Event deleted" });
+    
+    res.json({ 
+      message: "Event and all associated bookings deleted successfully" 
+    });
   } catch (err) {
     err.statusCode = err.statusCode || 500;
     next(err);
@@ -186,25 +185,6 @@ exports.approveEvent = async (req, res, next) => {
       { new: true }
     );
     
-    if (!event) {
-      const error = new Error("Event not found");
-      error.statusCode = 404;
-      return next(error);
-    }
-    res.json({ event });
-  } catch (err) {
-    err.statusCode = err.statusCode || 500;
-    next(err);
-  }
-};
-
-exports.rejectEvent = async (req, res, next) => {
-  try {
-    const event = await Event.findByIdAndUpdate(
-      req.params.id,
-      { status: "declined" },
-      { new: true }
-    );
     if (!event) {
       const error = new Error("Event not found");
       error.statusCode = 404;
